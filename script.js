@@ -1,13 +1,13 @@
 // --- App State ---
 const state = {
     apiKey: localStorage.getItem('prepai_api_key') || '',
-    engine: localStorage.getItem('prepai_engine') || 'ollama',
-    model: localStorage.getItem('prepai_model') || 'gemini-1.5-flash',
+    engine: localStorage.getItem('prepai_engine') || 'gemini',
+    model: localStorage.getItem('prepai_model') || 'gemini-2.5-flash',
     ollamaUrl: localStorage.getItem('prepai_ollama_url') || 'http://localhost:11434',
     ollamaModel: localStorage.getItem('prepai_ollama_model') || 'gemma3',
     history: JSON.parse(localStorage.getItem('prepai_history')) || [],
     currentPlan: null,
-    
+
     // Teleprompter state
     prompter: {
         isRunning: false,
@@ -762,23 +762,23 @@ const DOM = {
     experienceLevel: document.getElementById('experience-level'),
     jobDescription: document.getElementById('job-description'),
     generateBtn: document.getElementById('generate-btn'),
-    
+
     // Sidebar History
     historyList: document.getElementById('history-list'),
     historyCount: document.getElementById('history-count'),
     mobileCloseBtn: document.getElementById('mobile-close-btn'),
     menuToggleBtn: document.getElementById('menu-toggle-btn'),
     sidebar: document.getElementById('sidebar'),
-    
+
     // Top Bar Status
     apiStatus: document.getElementById('api-status'),
     statusText: document.getElementById('status-text'),
-    
+
     // Panels
     welcomePanel: document.getElementById('welcome-panel'),
     loadingPanel: document.getElementById('loading-panel'),
     dashboardPanel: document.getElementById('dashboard-panel'),
-    
+
     // Dashboard Metadata Headers
     dashJobTitle: document.getElementById('dash-job-title'),
     dashCompanyName: document.getElementById('dash-company-name'),
@@ -786,11 +786,11 @@ const DOM = {
     matchScoreText: document.getElementById('match-score-text'),
     scoreCircleProgress: document.getElementById('score-circle-progress'),
     deleteCurrentPlan: document.getElementById('delete-current-plan'),
-    
+
     // Tabs Navigation
     dashboardTabs: document.getElementById('dashboard-tabs'),
     tabPanes: document.querySelectorAll('.tab-pane'),
-    
+
     // Tab Panes content
     skillsTechList: document.getElementById('skills-tech-list'),
     skillsSoftList: document.getElementById('skills-soft-list'),
@@ -802,7 +802,7 @@ const DOM = {
     elevatorPitchText: document.getElementById('elevator-pitch-text'),
     copyPitchBtn: document.getElementById('copy-pitch-btn'),
     startPrompterBtn: document.getElementById('start-prompter-btn'),
-    
+
     // Settings Modal
     settingsBtn: document.getElementById('settings-btn'),
     settingsModal: document.getElementById('settings-modal'),
@@ -821,7 +821,7 @@ const DOM = {
     settingsCancelBtn: document.getElementById('settings-cancel-btn'),
     settingsSaveBtn: document.getElementById('settings-save-btn'),
     settingsCloseBtn: document.getElementById('settings-close-btn'),
-    
+
     // Teleprompter Modal
     prompterModal: document.getElementById('prompter-modal'),
     prompterCloseBtn: document.getElementById('prompter-close-btn'),
@@ -832,7 +832,7 @@ const DOM = {
     prompterReset: document.getElementById('prompter-reset'),
     prompterSpeed: document.getElementById('prompter-speed'),
     prompterFont: document.getElementById('prompter-font'),
-    
+
     // Loader texts
     loaderTitle: document.getElementById('loader-title'),
     loaderTip: document.getElementById('loader-tip'),
@@ -852,13 +852,13 @@ const LOADING_TIPS = [
 document.addEventListener('DOMContentLoaded', () => {
     // Initialize Lucide Icons
     lucide.createIcons();
-    
+
     // Load config state
     loadConfig();
-    
+
     // Render Sidebar History
     renderHistory();
-    
+
     // Add Event Listeners
     setupEventListeners();
 });
@@ -866,18 +866,27 @@ document.addEventListener('DOMContentLoaded', () => {
 // --- Config State Managers ---
 function loadConfig() {
     state.apiKey = localStorage.getItem('prepai_api_key') || '';
-    state.engine = localStorage.getItem('prepai_engine') || 'ollama';
-    state.model = localStorage.getItem('prepai_model') || 'gemini-1.5-flash';
+    state.engine = localStorage.getItem('prepai_engine') || 'gemini';
+
+    let storedModel = localStorage.getItem('prepai_model') || 'gemini-2.5-flash';
+    if (storedModel === 'gemini-1.5-flash') {
+        storedModel = 'gemini-2.5-flash';
+    } else if (storedModel === 'gemini-1.5-pro') {
+        storedModel = 'gemini-2.5-pro';
+    }
+    state.model = storedModel;
+    localStorage.setItem('prepai_model', state.model);
+
     state.ollamaUrl = localStorage.getItem('prepai_ollama_url') || 'http://localhost:11434';
     state.ollamaModel = localStorage.getItem('prepai_ollama_model') || 'gemma3';
-    
+
     // Populate settings form values
     DOM.settingsEngine.value = state.engine;
     DOM.settingsApiKey.value = state.apiKey;
     DOM.settingsModel.value = state.model;
     DOM.settingsOllamaUrl.value = state.ollamaUrl;
     DOM.settingsOllamaModel.value = state.ollamaModel;
-    
+
     toggleEngineFieldVisibility();
     updateApiStatusIndicator();
 }
@@ -886,11 +895,11 @@ function toggleEngineFieldVisibility() {
     const engine = DOM.settingsEngine.value;
 
     // Ollama fields
-    DOM.ollamaUrlGroup.style.display   = engine === 'ollama' ? 'block' : 'none';
+    DOM.ollamaUrlGroup.style.display = engine === 'ollama' ? 'block' : 'none';
     DOM.ollamaModelGroup.style.display = engine === 'ollama' ? 'block' : 'none';
 
     // Gemini fields
-    DOM.apiKeyGroup.style.display      = engine === 'gemini' ? 'block' : 'none';
+    DOM.apiKeyGroup.style.display = engine === 'gemini' ? 'block' : 'none';
     DOM.modelSelectGroup.style.display = engine === 'gemini' ? 'block' : 'none';
 }
 
@@ -902,9 +911,9 @@ function updateApiStatusIndicator() {
     if (state.engine === 'ollama') {
         indicator.className = 'status-indicator status-active';
         DOM.statusText.textContent = `Ollama • ${state.ollamaModel}`;
-    } else if (state.engine === 'gemini' && state.apiKey) {
+    } else if (state.engine === 'gemini') {
         indicator.className = 'status-indicator status-active';
-        DOM.statusText.textContent = `Gemini AI (${state.model})`;
+        DOM.statusText.textContent = `Gemini API`;
     } else {
         indicator.className = 'status-indicator status-fallback';
         DOM.statusText.textContent = 'Static Fallback (Offline)';
@@ -915,7 +924,7 @@ function updateApiStatusIndicator() {
 function setupEventListeners() {
     // Form Submit
     DOM.prepForm.addEventListener('submit', handleFormSubmit);
-    
+
     // Settings modal interactions
     DOM.settingsBtn.addEventListener('click', () => openModal(DOM.settingsModal));
     DOM.settingsCloseBtn.addEventListener('click', () => closeModal(DOM.settingsModal));
@@ -923,31 +932,31 @@ function setupEventListeners() {
     DOM.settingsEngine.addEventListener('change', toggleApiKeyVisibility);
     DOM.settingsSaveBtn.addEventListener('click', saveConfigurations);
     DOM.clearHistoryBtn.addEventListener('click', clearHistory);
-    
+
     // History panel item clicks
     DOM.historyList.addEventListener('click', handleHistoryListClick);
-    
+
     // Menu toggles for Mobile
     DOM.menuToggleBtn.addEventListener('click', () => DOM.sidebar.classList.add('mobile-open'));
     DOM.mobileCloseBtn.addEventListener('click', () => DOM.sidebar.classList.remove('mobile-open'));
-    
+
     // Dashboard tab switching controls
     DOM.dashboardTabs.addEventListener('click', handleTabClick);
-    
+
     // Current Plan Actions
     DOM.deleteCurrentPlan.addEventListener('click', deleteActivePlan);
-    
+
     // Copy Pitch & Start Teleprompter
     DOM.copyPitchBtn.addEventListener('click', copyElevatorPitch);
     DOM.startPrompterBtn.addEventListener('click', openTeleprompter);
-    
+
     // Teleprompter interactions
     DOM.prompterCloseBtn.addEventListener('click', closeTeleprompter);
     DOM.prompterPlay.addEventListener('click', toggleTeleprompterPlay);
     DOM.prompterReset.addEventListener('click', resetTeleprompter);
     DOM.prompterSpeed.addEventListener('input', updateTeleprompterSpeed);
     DOM.prompterFont.addEventListener('input', updateTeleprompterFontSize);
-    
+
     // Close modals on clicking overlay background
     window.addEventListener('click', (e) => {
         if (e.target === DOM.settingsModal) closeModal(DOM.settingsModal);
@@ -966,29 +975,26 @@ function closeModal(modalEl) {
 
 // Save Settings Configurations
 function saveConfigurations() {
-    const engine        = DOM.settingsEngine.value;
-    const apiKey        = DOM.settingsApiKey.value.trim();
-    const model         = DOM.settingsModel.value;
-    const ollamaUrl     = DOM.settingsOllamaUrl.value.trim() || 'http://localhost:11434';
-    const ollamaModel   = DOM.settingsOllamaModel.value.trim() || 'gemma3';
-    
-    if (engine === 'gemini' && !apiKey) {
-        alert('Please provide a Gemini API Key to use the Gemini engine.');
-        return;
-    }
-    
+    const engine = DOM.settingsEngine.value;
+    const apiKey = DOM.settingsApiKey.value.trim();
+    const model = DOM.settingsModel.value;
+    const ollamaUrl = DOM.settingsOllamaUrl.value.trim() || 'http://localhost:11434';
+    const ollamaModel = DOM.settingsOllamaModel.value.trim() || 'gemma3';
+
+    // The Gemini API key is now optional since the backend provides a default GEMINI_API_KEY.
+
     localStorage.setItem('prepai_engine', engine);
     localStorage.setItem('prepai_api_key', apiKey);
     localStorage.setItem('prepai_model', model);
     localStorage.setItem('prepai_ollama_url', ollamaUrl);
     localStorage.setItem('prepai_ollama_model', ollamaModel);
-    
-    state.engine      = engine;
-    state.apiKey      = apiKey;
-    state.model       = model;
-    state.ollamaUrl   = ollamaUrl;
+
+    state.engine = engine;
+    state.apiKey = apiKey;
+    state.model = model;
+    state.ollamaUrl = ollamaUrl;
     state.ollamaModel = ollamaModel;
-    
+
     updateApiStatusIndicator();
     closeModal(DOM.settingsModal);
 }
@@ -1009,11 +1015,11 @@ function clearHistory() {
 function handleTabClick(e) {
     const btn = e.target.closest('.tab-btn');
     if (!btn) return;
-    
+
     // Clear active classes
     DOM.dashboardTabs.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     DOM.tabPanes.forEach(p => p.classList.remove('active'));
-    
+
     // Add active classes
     btn.classList.add('active');
     const tabName = btn.dataset.tab;
@@ -1025,32 +1031,32 @@ function showPanel(panelEl) {
     DOM.welcomePanel.classList.remove('active-panel');
     DOM.loadingPanel.classList.remove('active-panel');
     DOM.dashboardPanel.classList.remove('active-panel');
-    
+
     panelEl.classList.add('active-panel');
 }
 
 // --- Generating Plans (Fallback vs API) ---
 function handleFormSubmit(e) {
     e.preventDefault();
-    
+
     const jobTitleVal = DOM.jobTitle.value.trim();
     const companyVal = DOM.companyName.value.trim();
     const expVal = DOM.experienceLevel.value;
     const jobDescVal = DOM.jobDescription.value.trim();
-    
+
     if (!jobTitleVal || !companyVal || !jobDescVal) return;
-    
+
     // Close sidebar on mobile
     DOM.sidebar.classList.remove('mobile-open');
-    
+
     // Setup Loading Screen
     showPanel(DOM.loadingPanel);
     DOM.progressBarFill.style.width = '0%';
-    
+
     let currentStep = 0;
     DOM.loaderTitle.textContent = LOADING_TIPS[0].title;
     DOM.loaderTip.textContent = LOADING_TIPS[0].tip;
-    
+
     // Cycle loading prompts dynamically
     const loadingInterval = setInterval(() => {
         currentStep++;
@@ -1060,11 +1066,11 @@ function handleFormSubmit(e) {
             DOM.progressBarFill.style.width = `${(currentStep / LOADING_TIPS.length) * 80}%`;
         }
     }, 600);
-    
+
     // Route to the configured generation engine
     if (state.engine === 'ollama') {
         generateWithOllamaAPI(jobTitleVal, companyVal, expVal, jobDescVal, loadingInterval);
-    } else if (state.engine === 'gemini' && state.apiKey) {
+    } else if (state.engine === 'gemini') {
         generateWithGeminiAPI(jobTitleVal, companyVal, expVal, jobDescVal, loadingInterval);
     } else {
         // Static keyword-matching fallback
@@ -1084,7 +1090,7 @@ function handleFormSubmit(e) {
 function generateLocalPlan(jobTitle, companyName, expLevel, jobDesc) {
     const text = (jobTitle + " " + jobDesc).toLowerCase();
     let category = "generic";
-    
+
     if (text.includes("data analyst") || text.includes("analytics") || text.includes("tableau") || text.includes("power bi") || text.includes("powerbi")) {
         category = "data_analyst";
     } else if (text.includes("project manager") || text.includes("project management") || text.includes("asana") || text.includes("jira timeline")) {
@@ -1104,17 +1110,17 @@ function generateLocalPlan(jobTitle, companyName, expLevel, jobDesc) {
     } else if (text.includes("aws") || text.includes("cloud") || text.includes("devops") || text.includes("kubernetes") || text.includes("terraform") || text.includes("docker")) {
         category = "cloud";
     }
-    
+
     // Fetch template package copy
     const dbSource = LOCAL_DATABASES[category];
     const expText = DOM.experienceLevel.options[DOM.experienceLevel.selectedIndex].text;
-    
+
     // Parse elevator pitch script mapping variables
     let pitchText = dbSource.elevatorPitch
         .replace("[Company]", companyName)
         .replace("[Job Title]", jobTitle)
         .replace("[Experience Level]", expText);
-        
+
     return {
         id: Date.now(),
         jobTitle,
@@ -1136,7 +1142,7 @@ function generateLocalPlan(jobTitle, companyName, expLevel, jobDesc) {
 async function generateWithOllamaAPI(jobTitle, companyName, expLevel, jobDesc, loadingInterval) {
     const expText = DOM.experienceLevel.options[DOM.experienceLevel.selectedIndex].text;
     const baseUrl = state.ollamaUrl.replace(/\/$/, ''); // strip trailing slash
-    const model   = state.ollamaModel;
+    const model = state.ollamaModel;
 
     // ── STEP 1: build the universal role-analysis prompt ──────────────────────
     const systemPrompt = `You are an expert career coach, hiring manager, and talent strategist.
@@ -1276,7 +1282,7 @@ Return this JSON schema with real, filled-in content based entirely on the above
 
         // Find the outermost JSON object in case there is leading text
         const jsonStart = rawText.indexOf('{');
-        const jsonEnd   = rawText.lastIndexOf('}');
+        const jsonEnd = rawText.lastIndexOf('}');
         if (jsonStart === -1 || jsonEnd === -1) throw new Error('No JSON object found in Ollama response.');
         rawText = rawText.slice(jsonStart, jsonEnd + 1);
 
@@ -1314,7 +1320,7 @@ Return this JSON schema with real, filled-in content based entirely on the above
 // Live Gemini API generator
 async function generateWithGeminiAPI(jobTitle, companyName, expLevel, jobDesc, loadingInterval) {
     const expText = DOM.experienceLevel.options[DOM.experienceLevel.selectedIndex].text;
-    
+
     const prompt = `You are an expert career coach, hiring manager, and talent strategist.
 You MUST return a single valid JSON object ONLY. No markdown, no code fences, no text before or after the JSON.
 
@@ -1422,35 +1428,37 @@ Return this JSON schema with real, filled-in content based entirely on the above
 }`;
 
     try {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${state.model}:generateContent?key=${state.apiKey}`;
+        const url = `/api/generate`;
+        const headers = { 'Content-Type': 'application/json' };
+        if (state.apiKey) {
+            headers['x-api-key'] = state.apiKey;
+        }
         const response = await fetch(url, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: headers,
             body: JSON.stringify({
-                contents: [{ parts: [{ text: prompt }] }],
-                generationConfig: {
-                    responseMimeType: 'application/json'
-                }
+                model: state.model,
+                prompt: prompt
             })
         });
-        
+
         clearInterval(loadingInterval);
-        
+
         if (!response.ok) {
             const errData = await response.json();
             throw new Error(errData.error?.message || "HTTP Error connecting to Gemini API.");
         }
-        
+
         DOM.progressBarFill.style.width = '100%';
         const data = await response.json();
-        
+
         let jsonText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-        
+
         // Clean up markdown markers if Gemini returned them despite responseMimeType
         jsonText = jsonText.replace(/^\s*```json/i, '').replace(/```\s*$/, '').trim();
-        
+
         const planData = JSON.parse(jsonText);
-        
+
         // Inject metadata fields
         const plan = {
             id: Date.now(),
@@ -1460,19 +1468,15 @@ Return this JSON schema with real, filled-in content based entirely on the above
             dateStr: new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }),
             ...planData
         };
-        
+
         savePlanToHistory(plan);
         displayPlan(plan);
-        
+
     } catch (err) {
         clearInterval(loadingInterval);
         console.error(err);
-        alert(`Gemini Generation Failed: ${err.message}\n\nFalling back to local keyword parsing engine.`);
-        
-        // Fallback to local execution
-        const plan = generateLocalPlan(jobTitle, companyName, expLevel, jobDesc);
-        savePlanToHistory(plan);
-        displayPlan(plan);
+        alert(`Gemini Generation Failed: ${err.message}. Please check your connection or try again.`);
+        showPanel(DOM.welcomePanel);
     }
 }
 
@@ -1488,7 +1492,7 @@ function savePlanToHistory(plan) {
 function renderHistory() {
     DOM.historyList.innerHTML = '';
     DOM.historyCount.textContent = state.history.length;
-    
+
     if (state.history.length === 0) {
         DOM.historyList.innerHTML = `
             <li class="history-empty" style="text-align: center; color: var(--text-muted); font-size: 0.8rem; padding: 1.5rem 0;">
@@ -1497,12 +1501,12 @@ function renderHistory() {
         `;
         return;
     }
-    
+
     state.history.forEach((plan) => {
         const item = document.createElement('li');
         item.className = `history-item ${state.currentPlan && state.currentPlan.id === plan.id ? 'active' : ''}`;
         item.dataset.id = plan.id;
-        
+
         item.innerHTML = `
             <div class="history-info">
                 <span class="history-title">${plan.jobTitle}</span>
@@ -1514,7 +1518,7 @@ function renderHistory() {
         `;
         DOM.historyList.appendChild(item);
     });
-    
+
     // Re-trigger icon injects
     lucide.createIcons();
 }
@@ -1523,28 +1527,28 @@ function renderHistory() {
 function handleHistoryListClick(e) {
     const item = e.target.closest('.history-item');
     const deleteBtn = e.target.closest('.history-delete');
-    
+
     if (!item) return;
-    
+
     const id = parseInt(item.dataset.id);
     const plan = state.history.find(p => p.id === id);
-    
+
     if (deleteBtn) {
         e.stopPropagation();
         if (confirm(`Delete plan for ${plan.jobTitle} at ${plan.companyName}?`)) {
             state.history = state.history.filter(p => p.id !== id);
             localStorage.setItem('prepai_history', JSON.stringify(state.history));
-            
+
             if (state.currentPlan && state.currentPlan.id === id) {
                 state.currentPlan = null;
                 showPanel(DOM.welcomePanel);
             }
-            
+
             renderHistory();
         }
         return;
     }
-    
+
     // Load selected plan details
     displayPlan(plan);
 }
@@ -1564,24 +1568,24 @@ function deleteActivePlan() {
 // --- Populate Dashboard UI ---
 function displayPlan(plan) {
     state.currentPlan = plan;
-    
+
     // Set headers
     DOM.dashJobTitle.textContent = plan.jobTitle;
     DOM.dashCompanyName.textContent = `${plan.companyName} • ${plan.expLevel}`;
     DOM.dashQCount.textContent = (plan.technicalQuestions?.length || 0) + (plan.behavioralQuestions?.length || 0);
-    
+
     // Update Score Circle Gauge
     DOM.matchScoreText.textContent = plan.matchScore;
     const scoreVal = parseInt(plan.matchScore) || 80;
     const strokeDash = 201 - (201 * scoreVal) / 100;
     DOM.scoreCircleProgress.style.strokeDashoffset = strokeDash;
-    
+
     // Render Role Analysis
     const roleAnalysisCard = document.getElementById('role-analysis-card');
     if (plan.roleAnalysis) {
         document.getElementById('analysis-industry').textContent = plan.roleAnalysis.industry || '—';
         document.getElementById('analysis-role-type').textContent = plan.roleAnalysis.roleType || '—';
-        
+
         const hardSkillsContainer = document.getElementById('analysis-hard-skills');
         hardSkillsContainer.innerHTML = '';
         if (plan.roleAnalysis.hardSkills && plan.roleAnalysis.hardSkills.length > 0) {
@@ -1594,7 +1598,7 @@ function displayPlan(plan) {
         } else {
             hardSkillsContainer.innerHTML = '<span class="analysis-value">—</span>';
         }
-        
+
         const softSkillsContainer = document.getElementById('analysis-soft-skills');
         softSkillsContainer.innerHTML = '';
         if (plan.roleAnalysis.softSkills && plan.roleAnalysis.softSkills.length > 0) {
@@ -1607,7 +1611,7 @@ function displayPlan(plan) {
         } else {
             softSkillsContainer.innerHTML = '<span class="analysis-value">—</span>';
         }
-        
+
         const competenciesContainer = document.getElementById('analysis-competencies');
         competenciesContainer.innerHTML = '';
         if (plan.roleAnalysis.topCompetencies && plan.roleAnalysis.topCompetencies.length > 0) {
@@ -1620,7 +1624,7 @@ function displayPlan(plan) {
         } else {
             competenciesContainer.innerHTML = '<span class="analysis-value">—</span>';
         }
-        
+
         roleAnalysisCard.style.display = 'block';
     } else {
         roleAnalysisCard.style.display = 'none';
@@ -1632,16 +1636,16 @@ function displayPlan(plan) {
     renderBehavioralTab(plan);
     renderResumeTab(plan);
     renderPitchTab(plan);
-    
+
     // Highlight sidebar active item
     renderHistory();
-    
+
     // Display dashboard panel
     showPanel(DOM.dashboardPanel);
-    
+
     // Re-render accordion toggle states
     updateTechProgressCount();
-    
+
     // Reset active tab to first
     DOM.dashboardTabs.querySelectorAll('.tab-btn').forEach((b, idx) => {
         if (idx === 0) b.classList.add('active');
@@ -1656,7 +1660,7 @@ function displayPlan(plan) {
 function renderSkillsTab(plan) {
     DOM.skillsTechList.innerHTML = '';
     DOM.skillsSoftList.innerHTML = '';
-    
+
     if (plan.skills?.tech?.length) {
         plan.skills.tech.forEach((skill) => {
             const skillDiv = document.createElement('div');
@@ -1673,7 +1677,7 @@ function renderSkillsTab(plan) {
             DOM.skillsTechList.appendChild(skillDiv);
         });
     }
-    
+
     if (plan.skills?.soft?.length) {
         plan.skills.soft.forEach((skill) => {
             const skillDiv = document.createElement('div');
@@ -1694,21 +1698,21 @@ function renderSkillsTab(plan) {
 
 function renderTechTab(plan) {
     DOM.techQuestionsList.innerHTML = '';
-    
+
     if (!plan.technicalQuestions || plan.technicalQuestions.length === 0) {
         DOM.techQuestionsList.innerHTML = `<p style="color: var(--text-muted);">No technical questions available.</p>`;
         return;
     }
-    
+
     plan.technicalQuestions.forEach((q, idx) => {
         const item = document.createElement('div');
         item.className = 'accordion-item';
         item.dataset.index = idx;
-        
+
         // Unique key for tracking mastered questions in localStorage
         const masteredKey = `prep_mastered_${plan.id}_t_${idx}`;
         const isMastered = localStorage.getItem(masteredKey) === 'true';
-        
+
         item.innerHTML = `
             <button class="accordion-header">
                 <div class="question-text-wrapper">
@@ -1741,29 +1745,29 @@ function renderTechTab(plan) {
                 </div>
             </div>
         `;
-        
+
         // Accordion Expand/Collapse Event
         item.querySelector('.accordion-header').addEventListener('click', (e) => {
             if (e.target.closest('.tech-mastery-chk') || e.target.closest('.check-label')) return;
             toggleAccordion(item);
         });
-        
+
         // Mastery checkbox change
         item.querySelector('.tech-mastery-chk').addEventListener('change', (e) => {
             localStorage.setItem(e.target.dataset.key, e.target.checked);
             updateTechProgressCount();
         });
-        
+
         DOM.techQuestionsList.appendChild(item);
     });
-    
+
     lucide.createIcons();
 }
 
 function toggleAccordion(item) {
     const isOpen = item.classList.contains('open');
     const content = item.querySelector('.accordion-content');
-    
+
     // Close other items
     const siblings = item.parentNode.querySelectorAll('.accordion-item');
     siblings.forEach(sib => {
@@ -1772,7 +1776,7 @@ function toggleAccordion(item) {
             sib.querySelector('.accordion-content').style.maxHeight = null;
         }
     });
-    
+
     if (isOpen) {
         item.classList.remove('open');
         content.style.maxHeight = null;
@@ -1784,17 +1788,17 @@ function toggleAccordion(item) {
 
 function updateTechProgressCount() {
     if (!state.currentPlan || !state.currentPlan.technicalQuestions) return;
-    
+
     const count = state.currentPlan.technicalQuestions.length;
     let masteredCount = 0;
-    
+
     state.currentPlan.technicalQuestions.forEach((q, idx) => {
         const key = `prep_mastered_${state.currentPlan.id}_t_${idx}`;
         if (localStorage.getItem(key) === 'true') {
             masteredCount++;
         }
     });
-    
+
     const pct = count > 0 ? (masteredCount / count) * 100 : 0;
     document.getElementById('tech-progress-text').textContent = `${masteredCount} / ${count} Mastered`;
     document.getElementById('tech-progress-bar').style.width = `${pct}%`;
@@ -1802,17 +1806,17 @@ function updateTechProgressCount() {
 
 function renderBehavioralTab(plan) {
     DOM.behavioralQuestionsList.innerHTML = '';
-    
+
     if (!plan.behavioralQuestions || plan.behavioralQuestions.length === 0) {
         DOM.behavioralQuestionsList.innerHTML = `<p style="color: var(--text-muted);">No behavioral questions available.</p>`;
         return;
     }
-    
+
     plan.behavioralQuestions.forEach((q, idx) => {
         const item = document.createElement('div');
         item.className = 'accordion-item';
         item.dataset.index = idx;
-        
+
         item.innerHTML = `
             <button class="accordion-header">
                 <div class="question-text-wrapper">
@@ -1862,15 +1866,15 @@ function renderBehavioralTab(plan) {
                 </div>
             </div>
         `;
-        
+
         // Accordion Expand/Collapse Event
         item.querySelector('.accordion-header').addEventListener('click', () => {
             toggleAccordion(item);
         });
-        
+
         DOM.behavioralQuestionsList.appendChild(item);
     });
-    
+
     lucide.createIcons();
 }
 
@@ -1878,7 +1882,7 @@ function renderResumeTab(plan) {
     DOM.resumeKeywordsList.innerHTML = '';
     DOM.resumeBulletsList.innerHTML = '';
     DOM.resumeGeneralTips.innerHTML = '';
-    
+
     // Render Keywords
     if (plan.resumeAudit?.keywords?.length) {
         plan.resumeAudit.keywords.forEach((keyword) => {
@@ -1890,7 +1894,7 @@ function renderResumeTab(plan) {
     } else {
         DOM.resumeKeywordsList.innerHTML = `<p style="color: var(--text-muted);">No keyword suggestions available.</p>`;
     }
-    
+
     // Render Bullet comparison
     if (plan.resumeAudit?.bullets?.length) {
         plan.resumeAudit.bullets.forEach((bullet) => {
@@ -1916,7 +1920,7 @@ function renderResumeTab(plan) {
     } else {
         DOM.resumeBulletsList.innerHTML = `<p style="color: var(--text-muted);">No bullet recommendations available.</p>`;
     }
-    
+
     // Render general recommendations
     if (plan.resumeAudit?.generalTips?.length) {
         plan.resumeAudit.generalTips.forEach((tip) => {
@@ -1927,7 +1931,7 @@ function renderResumeTab(plan) {
     } else {
         DOM.resumeGeneralTips.innerHTML = `<li>Use reverse chronological layouts.</li><li>List quantitative metrics alongside actions.</li>`;
     }
-    
+
     lucide.createIcons();
 }
 
@@ -1938,16 +1942,16 @@ function renderPitchTab(plan) {
 // --- Copy & Practice Features ---
 function copyElevatorPitch() {
     if (!state.currentPlan?.elevatorPitch) return;
-    
+
     navigator.clipboard.writeText(state.currentPlan.elevatorPitch)
         .then(() => {
             const textSpan = DOM.copyPitchBtn.querySelector('span');
             const icon = DOM.copyPitchBtn.querySelector('i');
-            
+
             textSpan.textContent = "Copied!";
             icon.setAttribute('data-lucide', 'check');
             lucide.createIcons();
-            
+
             setTimeout(() => {
                 textSpan.textContent = "Copy Pitch";
                 icon.setAttribute('data-lucide', 'copy');
@@ -1962,20 +1966,20 @@ function copyElevatorPitch() {
 // --- Teleprompter Mode Engine ---
 function openTeleprompter() {
     if (!state.currentPlan?.elevatorPitch) return;
-    
+
     // Populate text inside prompter
     DOM.prompterScroller.textContent = state.currentPlan.elevatorPitch;
-    
+
     // Set slider bindings
     DOM.prompterSpeed.value = state.prompter.speed;
     DOM.prompterFont.value = state.prompter.fontSize;
-    
+
     // Apply styling size
     DOM.prompterScroller.style.fontSize = `${state.prompter.fontSize}px`;
-    
+
     // Reset positioning and timers
     resetTeleprompter();
-    
+
     openModal(DOM.prompterModal);
 }
 
@@ -1994,11 +1998,11 @@ function toggleTeleprompterPlay() {
 
 function startTeleprompterScroll() {
     state.prompter.isRunning = true;
-    
+
     // Change Play Icon to Pause
     DOM.prompterPlayIcon.setAttribute('data-lucide', 'pause');
     lucide.createIcons();
-    
+
     // Start Time Clock
     state.prompter.timer = setInterval(() => {
         state.prompter.seconds++;
@@ -2006,21 +2010,21 @@ function startTeleprompterScroll() {
         const secs = String(state.prompter.seconds % 60).padStart(2, '0');
         DOM.prompterTimer.textContent = `${mins}:${secs}`;
     }, 1000);
-    
+
     // Start Scroll motion loop
     let currentScroll = parseFloat(DOM.prompterScroller.style.transform.replace('translateY(', '').replace('px)', '')) || 100;
-    
+
     state.prompter.scrollInterval = setInterval(() => {
         // Adjust scroll speed (higher speed = scroll faster, translating upwards)
         const scrollFactor = state.prompter.speed * 0.15;
         currentScroll -= scrollFactor;
-        
+
         DOM.prompterScroller.style.transform = `translateY(${currentScroll}px)`;
-        
+
         // Stop scroll if we scrolled past the card bounds
         const containerHeight = DOM.prompterScroller.parentElement.offsetHeight;
         const textHeight = DOM.prompterScroller.offsetHeight;
-        
+
         if (Math.abs(currentScroll) > (textHeight + containerHeight / 2)) {
             stopTeleprompterScroll();
         }
@@ -2031,7 +2035,7 @@ function stopTeleprompterScroll() {
     state.prompter.isRunning = false;
     DOM.prompterPlayIcon.setAttribute('data-lucide', 'play');
     lucide.createIcons();
-    
+
     clearInterval(state.prompter.timer);
     clearInterval(state.prompter.scrollInterval);
 }
@@ -2040,7 +2044,7 @@ function resetTeleprompter() {
     stopTeleprompterScroll();
     state.prompter.seconds = 0;
     DOM.prompterTimer.textContent = "00:00";
-    
+
     // Reset positioning
     DOM.prompterScroller.style.transform = `translateY(120px)`;
 }
