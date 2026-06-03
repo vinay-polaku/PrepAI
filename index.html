@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PrepAI – AI Interview Preparation Agent</title>
+    <!-- Google Fonts: Outfit & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation & Inputs -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i data-lucide="cpu" class="logo-icon"></i>
+                    <span>PrepAI</span>
+                </div>
+                <button class="mobile-close" id="mobile-close-btn">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+
+            <!-- Job details input form -->
+            <form class="prep-form" id="prep-form">
+                <div class="form-group">
+                    <label for="job-title">Job Title</label>
+                    <input type="text" id="job-title" placeholder="e.g. Senior Software Engineer" required>
+                </div>
+                <div class="form-group">
+                    <label for="company-name">Company Name</label>
+                    <input type="text" id="company-name" placeholder="e.g. Stripe" required>
+                </div>
+                <div class="form-group">
+                    <label for="experience-level">Experience Level</label>
+                    <select id="experience-level">
+                        <option value="entry">Entry Level (0-2 years)</option>
+                        <option value="mid" selected>Mid Level (2-5 years)</option>
+                        <option value="senior">Senior Level (5-8 years)</option>
+                        <option value="lead">Lead / Principal (8+ years)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="job-description">Job Description</label>
+                    <textarea id="job-description" placeholder="Paste the job description here..." required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary btn-generate" id="generate-btn">
+                    <i data-lucide="sparkles"></i>
+                    <span>Generate Prep Plan</span>
+                </button>
+            </form>
+
+            <!-- History / Saved Plans -->
+            <div class="history-section">
+                <h3>
+                    <span>Saved Plans</span>
+                    <span class="badge" id="history-count">0</span>
+                </h3>
+                <div class="history-list-wrapper">
+                    <ul class="history-list" id="history-list">
+                        <!-- Dynamically filled -->
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Sidebar Footer Settings -->
+            <div class="sidebar-footer">
+                <button class="btn btn-secondary btn-settings" id="settings-btn">
+                    <i data-lucide="settings"></i>
+                    <span>Settings & API</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Dashboard Viewport -->
+        <main class="main-content">
+            <!-- Top Navigation Bar -->
+            <header class="top-nav">
+                <button class="menu-toggle" id="menu-toggle-btn">
+                    <i data-lucide="menu"></i>
+                </button>
+                <div class="header-title">
+                    <h1>Interview Prep Dashboard</h1>
+                </div>
+                <div class="api-status" id="api-status">
+                    <span class="status-indicator status-fallback"></span>
+                    <span class="status-text" id="status-text">Local Engine (Offline)</span>
+                </div>
+            </header>
+
+            <div class="content-body">
+                <!-- Welcome/Empty State -->
+                <div class="welcome-container active-panel" id="welcome-panel">
+                    <div class="hero-card">
+                        <div class="hero-badge">
+                            <i data-lucide="zap"></i> Powered by Smart Local Matching & Gemini AI
+                        </div>
+                        <h2>Land Your Dream Job with Tailored Interview Prep</h2>
+                        <p>Paste a job description on the left. Our agent will analyze the role, key skills, and requirements to generate a complete personalized interview kit instantly.</p>
+                    </div>
+
+                    <div class="features-grid">
+                        <div class="feature-card">
+                            <div class="feature-icon-wrapper blue">
+                                <i data-lucide="compass"></i>
+                            </div>
+                            <h3>Key Skills Analysis</h3>
+                            <p>Identify primary technical and soft skills, see expected proficiency bars, and align your target strengths.</p>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-icon-wrapper purple">
+                                <i data-lucide="terminal"></i>
+                            </div>
+                            <h3>Technical & Role-Specific Q&A</h3>
+                            <p>Review standard technical prompts, system design queries, and concept questions with collapsible sample solutions.</p>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-icon-wrapper green">
+                                <i data-lucide="message-square"></i>
+                            </div>
+                            <h3>Behavioral Questions (STAR)</h3>
+                            <p>Practice common situational prompts mapped directly to the job scope, framed around the STAR structure.</p>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-icon-wrapper orange">
+                                <i data-lucide="file-edit"></i>
+                            </div>
+                            <h3>Resume Optimization</h3>
+                            <p>Get actionable suggestions to align your bullet points, identify missing keywords, and stand out to ATS filters.</p>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-icon-wrapper cyan">
+                                <i data-lucide="mic"></i>
+                            </div>
+                            <h3>30s Elevator Pitch</h3>
+                            <p>Generate a clean, engaging introductory hook, then practice speaking it using our scrolling teleprompter timer.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Loading State Screen -->
+                <div class="loading-container" id="loading-panel">
+                    <div class="loader-box">
+                        <div class="spinner">
+                            <div class="inner-circle"></div>
+                        </div>
+                        <div class="loader-text">
+                            <h3 id="loader-title">Analyzing Job Details</h3>
+                            <p id="loader-tip">Extracting core technologies...</p>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar-fill" id="progress-bar-fill"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Active Dashboard View -->
+                <div class="dashboard-viewport" id="dashboard-panel">
+                    <!-- Dashboard Metadata Header -->
+                    <div class="dashboard-header-card">
+                        <div class="dashboard-title-area">
+                            <h2 id="dash-job-title">Senior React Developer</h2>
+                            <p id="dash-company-name">Stripe • Mid Level</p>
+                        </div>
+                        <div class="dashboard-meta-stats">
+                            <div class="stat-box">
+                                <span class="stat-label">Match Score</span>
+                                <div class="stat-progress">
+                                    <div class="circular-progress" id="match-score-radial">
+                                        <svg>
+                                            <circle cx="36" cy="36" r="32"></circle>
+                                            <circle cx="36" cy="36" r="32" id="score-circle-progress"></circle>
+                                        </svg>
+                                        <div class="number"><span id="match-score-text">85</span>%</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="stat-box-simple">
+                                <span class="stat-label">Questions</span>
+                                <span class="stat-value" id="dash-q-count">10</span>
+                            </div>
+                            <div class="stat-box-simple">
+                                <button class="btn btn-icon-only" id="delete-current-plan" title="Delete Plan">
+                                    <i data-lucide="trash-2"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Role Analysis Card -->
+                    <div class="glass-card role-analysis-card" id="role-analysis-card" style="display: none;">
+                        <div class="card-header">
+                            <div class="icon-circle bg-indigo"><i data-lucide="clipboard-list"></i></div>
+                            <h3>Role Analysis</h3>
+                        </div>
+                        <div class="role-analysis-grid">
+                            <div class="analysis-col">
+                                <span class="analysis-label">Industry / Function</span>
+                                <span class="analysis-value" id="analysis-industry">—</span>
+                            </div>
+                            <div class="analysis-col">
+                                <span class="analysis-label">Role Type</span>
+                                <span class="analysis-value" id="analysis-role-type">—</span>
+                            </div>
+                            <div class="analysis-col">
+                                <span class="analysis-label">Hard Skills</span>
+                                <div class="analysis-tags" id="analysis-hard-skills"></div>
+                            </div>
+                            <div class="analysis-col">
+                                <span class="analysis-label">Soft Skills</span>
+                                <div class="analysis-tags" id="analysis-soft-skills"></div>
+                            </div>
+                            <div class="analysis-col">
+                                <span class="analysis-label">Top Competencies</span>
+                                <div class="analysis-tags" id="analysis-competencies"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tabs Selector Navigation -->
+                    <div class="tabs-nav-wrapper">
+                        <nav class="tabs-nav" id="dashboard-tabs">
+                            <button class="tab-btn active" data-tab="skills">
+                                <i data-lucide="brain"></i>
+                                <span>Key Skills</span>
+                            </button>
+                            <button class="tab-btn" data-tab="technical">
+                                <i data-lucide="terminal"></i>
+                                <span>Technical Questions</span>
+                            </button>
+                            <button class="tab-btn" data-tab="behavioral">
+                                <i data-lucide="message-square"></i>
+                                <span>Behavioral Q&A</span>
+                            </button>
+                            <button class="tab-btn" data-tab="resume">
+                                <i data-lucide="file-edit"></i>
+                                <span>Resume Tips</span>
+                            </button>
+                            <button class="tab-btn" data-tab="pitch">
+                                <i data-lucide="volume-2"></i>
+                                <span>Elevator Pitch</span>
+                            </button>
+                        </nav>
+                    </div>
+
+                    <!-- Tabs Panes Container -->
+                    <div class="tab-content-container">
+                        <!-- SKILLS TAB -->
+                        <div class="tab-pane active" id="pane-skills">
+                            <div class="pane-grid-2">
+                                <div class="glass-card">
+                                    <div class="card-header">
+                                        <div class="icon-circle bg-purple"><i data-lucide="cpu"></i></div>
+                                        <h3>Core Technical Skills</h3>
+                                    </div>
+                                    <div class="card-body">
+                                        <p class="subtitle-text">Key technologies and frameworks detected in the job requirements.</p>
+                                        <div class="skills-list" id="skills-tech-list">
+                                            <!-- Dynamically filled -->
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="glass-card">
+                                    <div class="card-header">
+                                        <div class="icon-circle bg-blue"><i data-lucide="users"></i></div>
+                                        <h3>Soft Skills & Domain Competency</h3>
+                                    </div>
+                                    <div class="card-body">
+                                        <p class="subtitle-text">Essential collaborative traits and execution capabilities requested.</p>
+                                        <div class="skills-list" id="skills-soft-list">
+                                            <!-- Dynamically filled -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- TECHNICAL QUESTIONS TAB -->
+                        <div class="tab-pane" id="pane-technical">
+                            <div class="pane-header-actions">
+                                <div>
+                                    <h3>Technical & Architectural Prep</h3>
+                                    <p class="subtitle-text">Questions tailored to your role. Click cards to expand answer outlines.</p>
+                                </div>
+                                <div class="completion-banner">
+                                    <span id="tech-progress-text">0 / 0 Completed</span>
+                                    <div class="progress-bar-small">
+                                        <div class="progress-fill" id="tech-progress-bar" style="width: 0%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="questions-accordion" id="tech-questions-list">
+                                <!-- Dynamic items -->
+                            </div>
+                        </div>
+
+                        <!-- BEHAVIORAL QUESTIONS TAB -->
+                        <div class="tab-pane" id="pane-behavioral">
+                            <div class="pane-header-actions">
+                                <div>
+                                    <h3>Behavioral & Situational Questions</h3>
+                                    <p class="subtitle-text">We suggest structuring your stories using the <strong>STAR</strong> method (Situation, Task, Action, Result).</p>
+                                </div>
+                            </div>
+                            <div class="questions-accordion" id="behavioral-questions-list">
+                                <!-- Dynamic items -->
+                            </div>
+                        </div>
+
+                        <!-- RESUME OPTIMIZATION TAB -->
+                        <div class="tab-pane" id="pane-resume">
+                            <div class="pane-grid-2">
+                                <div class="glass-card full-width-mobile">
+                                    <div class="card-header">
+                                        <div class="icon-circle bg-green"><i data-lucide="file-plus"></i></div>
+                                        <h3>ATS Keyword Enhancements</h3>
+                                    </div>
+                                    <div class="card-body">
+                                        <p class="subtitle-text">Integrate these essential keywords to improve parsing rate in automated Applicant Tracking Systems.</p>
+                                        <div class="keywords-grid" id="resume-keywords-list">
+                                            <!-- Dynamic buttons/badges -->
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="glass-card full-width-mobile">
+                                    <div class="card-header">
+                                        <div class="icon-circle bg-orange"><i data-lucide="refresh-cw"></i></div>
+                                        <h3>Bullet Point Improvements</h3>
+                                    </div>
+                                    <div class="card-body">
+                                        <p class="subtitle-text">Swap weak descriptions for action-oriented, quantifiable accomplishments.</p>
+                                        <div class="bullets-suggestions" id="resume-bullets-list">
+                                            <!-- Dynamic items -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="glass-card margin-top-md">
+                                <div class="card-header">
+                                    <div class="icon-circle bg-cyan"><i data-lucide="sparkles"></i></div>
+                                    <h3>General Resume Recommendations</h3>
+                                </div>
+                                <div class="card-body">
+                                    <ul class="custom-bullets" id="resume-general-tips">
+                                        <!-- Dynamic tips -->
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ELEVATOR PITCH TAB -->
+                        <div class="tab-pane" id="pane-pitch">
+                            <div class="pitch-layout">
+                                <div class="pitch-container glass-card">
+                                    <div class="card-header">
+                                        <div class="icon-circle bg-indigo"><i data-lucide="megaphone"></i></div>
+                                        <h3>Your 30-Second Elevator Pitch</h3>
+                                    </div>
+                                    <div class="card-body">
+                                        <p class="subtitle-text">Use this script to answer the dreaded: <em>"Tell me about yourself."</em></p>
+                                        
+                                        <div class="pitch-text-box" id="elevator-pitch-text">
+                                            <!-- Dynamic pitch -->
+                                        </div>
+
+                                        <div class="pitch-actions">
+                                            <button class="btn btn-secondary" id="copy-pitch-btn">
+                                                <i data-lucide="copy"></i>
+                                                <span>Copy Pitch</span>
+                                            </button>
+                                            <button class="btn btn-primary btn-practice" id="start-prompter-btn">
+                                                <i data-lucide="play-circle"></i>
+                                                <span>Practice (Teleprompter)</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="pitch-tips-card glass-card">
+                                    <div class="card-header">
+                                        <div class="icon-circle bg-yellow"><i data-lucide="lightbulb"></i></div>
+                                        <h3>Delivery Guidelines</h3>
+                                    </div>
+                                    <div class="card-body">
+                                        <ul class="custom-bullets">
+                                            <li><strong>Keep it under 150 words:</strong> Most people speak at roughly 130-150 words per minute. Aim for around 75-100 words.</li>
+                                            <li><strong>Hook, Credentials, Value:</strong> Start with a strong line, share 1-2 key achievements, and explain why you're a fit for this role specifically.</li>
+                                            <li><strong>Speak slowly:</strong> Natural speaking speed in interviews should feel deliberate. Keep breathing.</li>
+                                            <li><strong>End with a hook:</strong> Conclude by expressing enthusiasm for the team's core problems.</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- SETTINGS MODAL -->
+    <div class="modal-overlay" id="settings-modal">
+        <div class="modal-card glass-card">
+            <div class="modal-header">
+                <h3>Settings & AI Engine</h3>
+                <button class="modal-close" id="settings-close-btn">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-desc">Configure your preferred AI engine to generate interview prep materials. Choose between local models or cloud-based providers.</p>
+                
+                <div class="form-group margin-top-md">
+                    <label for="settings-engine">Generation Engine</label>
+                    <select id="settings-engine">
+                        <option value="ollama" selected>Ollama Local AI (Gemma – Recommended)</option>
+                        <option value="gemini">Gemini API (Cloud)</option>
+                        <option value="local">Static Fallback (Offline, No AI)</option>
+                    </select>
+                </div>
+
+                <!-- Ollama settings -->
+                <div class="form-group" id="ollama-url-group">
+                    <label for="settings-ollama-url">Ollama Server URL</label>
+                    <input type="text" id="settings-ollama-url" placeholder="http://localhost:11434">
+                    <span class="help-text">Default is <code>http://localhost:11434</code>. Make sure Ollama is running locally.</span>
+                </div>
+
+                <div class="form-group" id="ollama-model-group">
+                    <label for="settings-ollama-model">Ollama Model</label>
+                    <input type="text" id="settings-ollama-model" placeholder="gemma3">
+                    <span class="help-text">Enter the exact model tag (e.g. <code>gemma3</code>, <code>gemma:2b</code>). Run <code>ollama pull gemma3</code> if not yet installed.</span>
+                </div>
+
+                <!-- Gemini settings (hidden by default) -->
+                <div class="form-group" id="api-key-group" style="display: none;">
+                    <label for="settings-api-key">Gemini API Key</label>
+                    <input type="password" id="settings-api-key" placeholder="AIzaSy...">
+                    <span class="help-text">Your API Key is saved locally in your browser's <code>localStorage</code> and is sent directly to Google's API.</span>
+                </div>
+
+                <div class="form-group" id="model-select-group" style="display: none;">
+                    <label for="settings-model">Gemini Model</label>
+                    <select id="settings-model">
+                        <option value="gemini-1.5-flash" selected>Gemini 1.5 Flash (Fast, Recommended)</option>
+                        <option value="gemini-1.5-pro">Gemini 1.5 Pro (Extremely Detailed)</option>
+                    </select>
+                </div>
+
+                <div class="danger-zone">
+                    <h4>Actions</h4>
+                    <button class="btn btn-danger" id="clear-history-btn">
+                        <i data-lucide="trash"></i>
+                        <span>Clear All Saved Plans</span>
+                    </button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="settings-cancel-btn">Cancel</button>
+                <button class="btn btn-primary" id="settings-save-btn">Save Configurations</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TELEPROMPTER OVERLAY -->
+    <div class="modal-overlay prompter-overlay" id="prompter-modal">
+        <div class="prompter-card glass-card">
+            <div class="prompter-header">
+                <div class="prompter-title">
+                    <i data-lucide="monitor"></i>
+                    <span>Elevator Pitch Teleprompter</span>
+                </div>
+                <div class="prompter-timer" id="prompter-timer">00:00</div>
+                <button class="modal-close" id="prompter-close-btn">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            
+            <div class="prompter-viewport">
+                <div class="prompter-scroller" id="prompter-scroller">
+                    <!-- Text rendered here -->
+                </div>
+                <div class="prompter-focus-bar"></div>
+            </div>
+
+            <div class="prompter-controls">
+                <button class="btn btn-secondary btn-icon-only" id="prompter-reset" title="Reset">
+                    <i data-lucide="rotate-ccw"></i>
+                </button>
+                <button class="btn btn-primary btn-prompter-play" id="prompter-play" title="Play">
+                    <i data-lucide="play" id="prompter-play-icon"></i>
+                </button>
+                <div class="control-slider-group">
+                    <label for="prompter-speed">
+                        <i data-lucide="gauge"></i>
+                        <span>Speed</span>
+                    </label>
+                    <input type="range" id="prompter-speed" min="1" max="10" value="3">
+                </div>
+                <div class="control-slider-group">
+                    <label for="prompter-font">
+                        <i data-lucide="type"></i>
+                        <span>Size</span>
+                    </label>
+                    <input type="range" id="prompter-font" min="20" max="60" value="32">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Script -->
+    <script src="script.js"></script>
+</body>
+</html>
