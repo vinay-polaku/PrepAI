@@ -70,6 +70,17 @@ const server = http.createServer(async (req, res) => {
         }
 
         const apiKey = req.headers['x-api-key'] || process.env.GEMINI_API_KEY;
+        const apiKeyExists = !!apiKey;
+
+        let selectedModel = 'gemini-2.5-flash';
+        if (model && typeof model === 'string' && model.trim() !== '') {
+          const trimmedModel = model.trim();
+          if (trimmedModel.startsWith('gemini-')) {
+            selectedModel = trimmedModel;
+          }
+        }
+
+        console.log(`[Local Server Log] Request received. Model: "${selectedModel}", API Key Exists: ${apiKeyExists}`);
 
         if (!apiKey) {
           res.writeHead(500, { 'Content-Type': 'application/json' });
@@ -79,7 +90,6 @@ const server = http.createServer(async (req, res) => {
           return;
         }
 
-        const selectedModel = model || 'gemini-2.5-flash';
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${apiKey}`;
 
         const response = await fetch(url, {
@@ -91,7 +101,18 @@ const server = http.createServer(async (req, res) => {
           })
         });
 
-        const data = await response.json();
+        const textResponse = await response.text();
+        let data;
+        try {
+          data = JSON.parse(textResponse);
+        } catch (parseErr) {
+          res.writeHead(502, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({
+            error: { message: `Invalid JSON response received from Google API: ${textResponse.slice(0, 150)}` }
+          }));
+          return;
+        }
+
         res.writeHead(response.ok ? 200 : response.status, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(data));
       } catch (err) {

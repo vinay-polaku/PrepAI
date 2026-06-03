@@ -1,6 +1,7 @@
 // --- App State ---
+const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 const state = {
-    apiKey: localStorage.getItem('prepai_api_key') || '',
+    apiKey: isLocalhost ? (localStorage.getItem('prepai_api_key') || '') : '',
     engine: localStorage.getItem('prepai_engine') || 'gemini',
     model: localStorage.getItem('prepai_model') || 'gemini-2.5-flash',
     ollamaUrl: localStorage.getItem('prepai_ollama_url') || 'http://localhost:11434',
@@ -863,9 +864,9 @@ document.addEventListener('DOMContentLoaded', () => {
     setupEventListeners();
 });
 
-// --- Config State Managers ---
 function loadConfig() {
-    state.apiKey = localStorage.getItem('prepai_api_key') || '';
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    state.apiKey = isLocalhost ? (localStorage.getItem('prepai_api_key') || '') : '';
     state.engine = localStorage.getItem('prepai_engine') || 'gemini';
 
     let storedModel = localStorage.getItem('prepai_model') || 'gemini-2.5-flash';
@@ -893,13 +894,14 @@ function loadConfig() {
 
 function toggleEngineFieldVisibility() {
     const engine = DOM.settingsEngine.value;
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 
     // Ollama fields
     DOM.ollamaUrlGroup.style.display = engine === 'ollama' ? 'block' : 'none';
     DOM.ollamaModelGroup.style.display = engine === 'ollama' ? 'block' : 'none';
 
     // Gemini fields
-    DOM.apiKeyGroup.style.display = engine === 'gemini' ? 'block' : 'none';
+    DOM.apiKeyGroup.style.display = (engine === 'gemini' && isLocalhost) ? 'block' : 'none';
     DOM.modelSelectGroup.style.display = engine === 'gemini' ? 'block' : 'none';
 }
 
@@ -983,14 +985,20 @@ function saveConfigurations() {
 
     // The Gemini API key is now optional since the backend provides a default GEMINI_API_KEY.
 
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
     localStorage.setItem('prepai_engine', engine);
-    localStorage.setItem('prepai_api_key', apiKey);
+    if (isLocalhost) {
+        localStorage.setItem('prepai_api_key', apiKey);
+        state.apiKey = apiKey;
+    } else {
+        state.apiKey = '';
+    }
     localStorage.setItem('prepai_model', model);
     localStorage.setItem('prepai_ollama_url', ollamaUrl);
     localStorage.setItem('prepai_ollama_model', ollamaModel);
 
     state.engine = engine;
-    state.apiKey = apiKey;
     state.model = model;
     state.ollamaUrl = ollamaUrl;
     state.ollamaModel = ollamaModel;
@@ -1445,12 +1453,29 @@ Return this JSON schema with real, filled-in content based entirely on the above
         clearInterval(loadingInterval);
 
         if (!response.ok) {
-            const errData = await response.json();
-            throw new Error(errData.error?.message || "HTTP Error connecting to Gemini API.");
+            let errMsg = "HTTP Error connecting to Gemini API.";
+            try {
+                const errData = await response.json();
+                errMsg = errData.error?.message || errMsg;
+            } catch (parseErr) {
+                try {
+                    const text = await response.text();
+                    errMsg = text ? text.slice(0, 150) : `HTTP ${response.status}: ${response.statusText}`;
+                } catch (textErr) {
+                    errMsg = `HTTP Status ${response.status}: ${response.statusText}`;
+                }
+            }
+            throw new Error(errMsg);
         }
 
         DOM.progressBarFill.style.width = '100%';
-        const data = await response.json();
+        
+        let data;
+        try {
+            data = await response.json();
+        } catch (jsonErr) {
+            throw new Error("Failed to parse JSON response from backend.");
+        }
 
         let jsonText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
