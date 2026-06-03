@@ -1,0 +1,13 @@
+{
+  "name": "prepai",
+  "version": "1.0.0",
+  "description": "PrepAI - AI Interview Preparation Agent",
+  "main": "script.js",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "node server.js"
+  },
+  "devDependencies": {
+    "vercel": "^37.0.0"
+  }
+}
