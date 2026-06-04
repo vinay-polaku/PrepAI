@@ -4,7 +4,7 @@
   "description": "PrepAI - AI Interview Preparation Agent",
   "main": "script.js",
   "scripts": {
-    "build": "echo 'No build step required'",
+    "build": "mkdir -p public && cp index.html script.js style.css public/",
     "dev": "node server.js",
     "start": "node server.js"
   },
